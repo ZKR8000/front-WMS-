@@ -90,6 +90,15 @@ fun NavigationGraph(
         composable("gestion_utilisateurs") {
             GestionUtilisateursScreen(navController)
         }
+        composable("reception_details/{receptionId}") { backStackEntry ->
+            val id = backStackEntry.arguments?.getString("receptionId") ?: ""
+            ReceptionDetailScreen(navController, id)
+        }
+
+        composable("transfert_details/{transfertId}") { backStackEntry ->
+            val transfertId = backStackEntry.arguments?.getString("transfertId") ?: ""
+            TransfertDetailScreen(navController, transfertId)
+        }
 
         composable("ajout_utilisateur") {
             AjoutUtilisateurScreen(navController) { newUser ->
