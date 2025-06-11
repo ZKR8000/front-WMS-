@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
@@ -29,9 +30,21 @@ fun TransfertScreen(navController: NavHostController) {
 
     Scaffold(
         topBar = {
-            MediumTopAppBar(
-                title = { Text("Transfert des stocks", fontWeight = FontWeight.Bold, color = Color.White) },
-                colors = TopAppBarDefaults.mediumTopAppBarColors(containerColor = Color(0xFF1E88E5))
+            TopAppBar(
+                title = {
+                    Text(
+                        "Transfert des stocks",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        style = MaterialTheme.typography.titleMedium // taille réduite
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Retour", tint = Color.White)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF1E88E5))
             )
         }
     ) { paddingValues ->

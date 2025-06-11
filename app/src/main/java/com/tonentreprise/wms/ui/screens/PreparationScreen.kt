@@ -1,24 +1,24 @@
 package com.tonentreprise.wms.ui.screens
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.RoundedCornerShape
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,14 +26,25 @@ fun PreparationScreen(navController: NavHostController) {
     val commandesParQuantite = listOf("1001", "1003")
     val commandesParUnite = listOf("1002", "1004")
 
-    // ✅ Gestion de l'affichage des produits
     val expandedState = remember { mutableStateMapOf<String, Boolean>() }
 
     Scaffold(
         topBar = {
-            MediumTopAppBar(
-                title = { Text("Bon de Commandes", fontWeight = FontWeight.Bold, color = Color.White) },
-                colors = TopAppBarDefaults.mediumTopAppBarColors(containerColor = Color(0xFF6200EE))
+            TopAppBar(
+                title = {
+                    Text(
+                        "Bon de Commandes",
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        style = MaterialTheme.typography.titleMedium // taille réduite
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Filled.ArrowBack, contentDescription = "Retour", tint = Color.White)
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF6200EE))
             )
         }
     ) { paddingValues ->
