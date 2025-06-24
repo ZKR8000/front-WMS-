@@ -59,6 +59,8 @@ dependencies {
     implementation("androidx.camera:camera-camera2:1.3.0")
     implementation("androidx.camera:camera-lifecycle:1.3.0")
     implementation("androidx.camera:camera-view:1.3.0")
+    implementation("androidx.compose.ui:ui-text:1.5.11") // Ajoute cette dépendance
+
 
 
     // ✅ Lifecycle & ViewModel (Correction pour LifecycleOwner)
@@ -74,6 +76,16 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material3:material3:1.2.0") // Dernière version stable
+    // ✅ Retrofit pour les appels HTTP
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+
+// ✅ Gson Converter pour parser le JSON
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+// ✅ OkHttp pour le client réseau et les logs
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
     implementation ("androidx.compose.runtime:runtime-livedata:1.5.0") // Vérifie que c'est bien ajouté
     implementation("androidx.compose.material:material-icons-extended:1.5.11")
 

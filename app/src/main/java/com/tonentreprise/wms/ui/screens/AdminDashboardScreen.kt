@@ -111,17 +111,11 @@ fun AdminDashboardScreen(
             AdminMenuItem("Ajouter un Produit", Icons.Default.Inventory) {
                 navController.navigate("ajouter_produit")
             }
-            AdminMenuItem("Suivi des Stocks en Temps Réel", Icons.Default.BarChart) {
-                navController.navigate("stock_tracking")
-            }
-            AdminMenuItem("Contrôle des Entrées & Sorties", Icons.AutoMirrored.Filled.List) {
-                navController.navigate("entry_exit_control")
-            }
-            AdminMenuItem("Vue Globale du Stock", Icons.Default.Assessment) {
-                navController.navigate("vue_globale_stock")
-            }
             AdminMenuItem("Alertes de Stock", Icons.Default.Notifications) {
                 navController.navigate("stock_alerts")
+            }
+            AdminMenuItem("Voir les Emplacements", Icons.Default.Place) {
+                navController.navigate("liste_emplacements")
             }
             AdminMenuItem("Déconnexion", Icons.AutoMirrored.Filled.ExitToApp) {
                 sharedPrefs.edit().remove("user_role").apply()

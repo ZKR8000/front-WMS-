@@ -21,7 +21,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -29,6 +28,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.core.content.edit
 import com.tonentreprise.wms.viewmodel.UserViewModel
 import com.tonentreprise.wms.model.UserRole
+import com.tonentreprise.wms.network.LoginRequest
+import com.tonentreprise.wms.network.RetrofitClient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -46,6 +47,19 @@ fun LoginScreen(navController: NavHostController, userViewModel: UserViewModel) 
     var welcomeMessage by remember { mutableStateOf("") }
 
     val coroutineScope = rememberCoroutineScope()
+
+    // ✅ Redirection automatique si token déjà existant
+    LaunchedEffect(Unit) {
+        val token = sharedPrefs.getString("jwt_token", null)
+        val savedEmail = sharedPrefs.getString("user_email", null)
+
+        if (!token.isNullOrEmpty() && !savedEmail.isNullOrEmpty()) {
+            val isAdmin = savedEmail.startsWith("admin", ignoreCase = true)
+            navController.navigate(if (isAdmin) "admin_dashboard" else "dashboard_screen") {
+                popUpTo("login") { inclusive = true }
+            }
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -77,6 +91,7 @@ fun LoginScreen(navController: NavHostController, userViewModel: UserViewModel) 
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
+                // Email
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
@@ -95,6 +110,7 @@ fun LoginScreen(navController: NavHostController, userViewModel: UserViewModel) 
 
                 Spacer(modifier = Modifier.height(10.dp))
 
+                // Password
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
@@ -124,31 +140,54 @@ fun LoginScreen(navController: NavHostController, userViewModel: UserViewModel) 
 
                 Spacer(modifier = Modifier.height(20.dp))
 
+                // ✅ Login button
                 Button(
                     onClick = {
                         if (email.text.isNotEmpty() && password.text.isNotEmpty()) {
-                            val role = if (email.text == "admin@wms.com") UserRole.ADMIN else UserRole.USER
-                            userViewModel.setUserRole(role)
-
-                            // ✅ Enregistrement persistant avec KTX
-                            sharedPrefs.edit {
-                                putString("user_role", if (role == UserRole.ADMIN) "admin" else "user")
-                            }
-
-                            welcomeMessage = if (role == UserRole.ADMIN) {
-                                "Bonjour ADMINISTRATEUR"
-                            } else {
-                                "Bonjour UTILISATEUR"
-                            }
-
-                            showWelcomeMessage = true
                             coroutineScope.launch {
-                                delay(1500)
-                                showWelcomeMessage = false
-                                navController.navigate(
-                                    if (role == UserRole.ADMIN) "admin_dashboard" else "dashboard_screen"
-                                ) {
-                                    popUpTo("login") { inclusive = true }
+                                try {
+                                    val apiService = RetrofitClient.getInstance(context)
+                                    val response = apiService.login(
+                                        LoginRequest(email.text, password.text)
+                                    ).execute()
+
+                                    if (response.isSuccessful) {
+                                        val loginResponse = response.body()
+                                        val token = loginResponse?.token ?: ""
+
+                                        sharedPrefs.edit {
+                                            putString("jwt_token", token)
+                                            putString("user_email", email.text) // ✅ Enregistre l'email aussi
+                                        }
+
+                                        val role = if (email.text.startsWith("admin", ignoreCase = true)) UserRole.ADMIN else UserRole.USER
+                                        userViewModel.setUserRole(role)
+
+                                        sharedPrefs.edit {
+                                            putString("user_role", if (role == UserRole.ADMIN) "admin" else "user")
+                                        }
+
+                                        welcomeMessage = if (role == UserRole.ADMIN)
+                                            "Bonjour ADMINISTRATEUR"
+                                        else
+                                            "Bonjour UTILISATEUR"
+
+                                        showWelcomeMessage = true
+                                        delay(1500)
+                                        showWelcomeMessage = false
+
+                                        navController.navigate(
+                                            if (role == UserRole.ADMIN) "admin_dashboard" else "dashboard_screen"
+                                        ) {
+                                            popUpTo("login") { inclusive = true }
+                                        }
+                                    } else {
+                                        welcomeMessage = "Échec de connexion : ${response.code()}"
+                                        showWelcomeMessage = true
+                                    }
+                                } catch (e: Exception) {
+                                    welcomeMessage = "Erreur : ${e.localizedMessage}"
+                                    showWelcomeMessage = true
                                 }
                             }
                         }
@@ -164,6 +203,7 @@ fun LoginScreen(navController: NavHostController, userViewModel: UserViewModel) 
                     Text("Se connecter", color = Color.Black)
                 }
 
+                // ✅ Animated message
                 AnimatedVisibility(visible = showWelcomeMessage, enter = fadeIn(), exit = fadeOut()) {
                     Text(
                         text = welcomeMessage,
@@ -177,10 +217,3 @@ fun LoginScreen(navController: NavHostController, userViewModel: UserViewModel) 
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun LoginScreenPreview() {
-    val navController = rememberNavController()
-    val userViewModel = UserViewModel()
-    LoginScreen(navController, userViewModel)
-}
