@@ -30,7 +30,7 @@ fun DashboardScreen(navController: NavHostController, userViewModel: UserViewMod
     val userRole by userViewModel.userRole.collectAsState()
     val context = LocalContext.current
 
-    // Redirect to login if the user is not authenticated or is not a regular user
+    // Redirection automatique si l'utilisateur n'est pas authentifié ou n'est pas un utilisateur
     LaunchedEffect(userRole) {
         if (userRole != UserRole.USER) {
             navController.navigate("login") {
@@ -51,52 +51,61 @@ fun DashboardScreen(navController: NavHostController, userViewModel: UserViewMod
                         modifier = Modifier.fillMaxWidth(),
                     )
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF121212)) // Dark header color
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF121212)) // Couleur de fond sombre
             )
         },
-        containerColor = Color(0xFF121212) // Dark background
+        containerColor = Color(0xFF121212) // Fond sombre
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(Color(0xFF121212)), // Dark background
+                .background(Color(0xFF121212)), // Fond sombre
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
                 "Bienvenue 👋",
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 26.sp,
-                color = Color(0xFFBB86FC), // Light purple text
+                color = Color(0xFFBB86FC), // Texte violet clair
                 modifier = Modifier.padding(vertical = 32.dp)
             )
 
             DashboardMenuCard(
                 label = "Préparation",
                 icon = Icons.Filled.Warehouse,
-                color = Color(0xFF03DAC5), // Light Teal
+                color = Color(0xFF03DAC5), // Teal clair
                 onClick = { navController.navigate("preparation") }
             )
             DashboardMenuCard(
                 label = "Transfert",
                 icon = Icons.AutoMirrored.Filled.CompareArrows,
-                color = Color(0xFF018786), // Dark Teal
+                color = Color(0xFF018786), // Teal foncé
                 onClick = { navController.navigate("transfert") }
             )
             DashboardMenuCard(
                 label = "Réception",
                 icon = Icons.Filled.Receipt,
-                color = Color(0xFFCF6679), // Light Red
+                color = Color(0xFFCF6679), // Rouge clair
                 onClick = { navController.navigate("reception") }
             )
             DashboardMenuCard(
                 label = "Déconnexion",
                 icon = Icons.AutoMirrored.Filled.ExitToApp,
-                color = Color(0xFFBB86FC), // Light Purple
+                color = Color(0xFFBB86FC), // Violet clair
                 onClick = {
-                    val prefs = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-                    prefs.edit { remove("user_role") }
+                    // Effacer les données d'utilisateur de SharedPreferences
+                    val prefs = context.getSharedPreferences("WMS_PREFS", Context.MODE_PRIVATE)
+                    prefs.edit {
+                        remove("jwt_token") // Supprimer le token
+                        remove("user_email") // Supprimer l'email
+                        remove("user_role") // Supprimer le rôle
+                    }
+
+                    // Réinitialiser le rôle utilisateur dans ViewModel
                     userViewModel.setUserRole(null)
+
+                    // Rediriger vers l'écran de connexion
                     navController.navigate("login") {
                         popUpTo("dashboard_screen") { inclusive = true }
                     }
@@ -117,11 +126,11 @@ fun DashboardMenuCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp, horizontal = 24.dp)
-            .height(72.dp)  // Slightly bigger card
+            .height(72.dp)  // Carte légèrement plus grande
             .clickable { onClick() },
         shape = RoundedCornerShape(18.dp),
-        elevation = CardDefaults.cardElevation(8.dp),  // Softer shadows
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF333333)) // Dark card background
+        elevation = CardDefaults.cardElevation(8.dp),  // Ombres plus douces
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF333333)) // Fond sombre de la carte
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -133,14 +142,14 @@ fun DashboardMenuCard(
                 imageVector = icon,
                 contentDescription = label,
                 tint = color,
-                modifier = Modifier.size(32.dp) // Slightly bigger icon
+                modifier = Modifier.size(32.dp) // Icône légèrement plus grande
             )
             Spacer(Modifier.width(18.dp))
             Text(
                 label,
                 fontWeight = FontWeight.SemiBold,
-                color = Color.White, // White text for contrast
-                fontSize = 22.sp,  // Larger font size
+                color = Color.White, // Texte blanc pour le contraste
+                fontSize = 22.sp,  // Taille de police plus grande
             )
         }
     }

@@ -7,7 +7,7 @@ import okhttp3.OkHttpClient
 
 object RetrofitClient {
 
-    private const val BASE_URL = "http://192.168.1.23:8080/api/" // ✅ adapte si besoin
+    private const val BASE_URL = "http://192.168.1.36:8080/api/" // ✅ adapte si besoin
 
     fun getInstance(context: Context): ApiService {
         val client = OkHttpClient.Builder()

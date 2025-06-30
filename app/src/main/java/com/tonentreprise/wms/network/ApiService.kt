@@ -20,11 +20,12 @@ data class LoginResponse(
 // ✅ Interface Retrofit pour les appels API
 interface ApiService {
 
-    @POST("/api/auth/login") // ✅ URL exacte d'après ton backend
-    fun login(
+    @POST("/api/auth/login")
+    suspend fun login(
         @Body request: LoginRequest
-    ): Call<LoginResponse>
+    ): LoginResponse
 
-    @GET("sales-orders/Light")
+
+    @GET("/api/sales-orders/light")
     suspend fun getAllSalesOrdersLight(): List<SalesOrderLightDTO>
 }

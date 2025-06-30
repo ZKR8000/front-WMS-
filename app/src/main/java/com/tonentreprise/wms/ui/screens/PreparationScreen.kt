@@ -33,6 +33,7 @@ fun PreparationScreen(navController: NavHostController) {
     LaunchedEffect(Unit) {
         try {
             val result = apiService.getAllSalesOrdersLight()
+            Log.d("API", "Réponse des commandes: $result")  // Affiche la réponse dans les logs
             commandes.clear()
             commandes.addAll(result)
         } catch (e: Exception) {
@@ -55,15 +56,20 @@ fun PreparationScreen(navController: NavHostController) {
             )
         }
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(commandes) { commande ->
-                CommandeCard(navController, commande, expandedState)
+        // Vérifie si la liste de commandes est vide
+        if (commandes.isEmpty()) {
+            Text("Aucune commande à afficher", color = Color.Red, modifier = Modifier.padding(16.dp))
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(commandes) { commande ->
+                    CommandeCard(navController, commande, expandedState)
+                }
             }
         }
     }
@@ -78,6 +84,11 @@ fun CommandeCard(
     val expanded = expandedState[commande.id] ?: false
     val produits = commande.salesOrderDetails.map { it.productName }
 
+    // Vérifie si les données sont valides avant d'afficher
+    if (commande.sohNum.isNullOrEmpty()) {
+        Log.e("Commande", "Commande sans numéro !")
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -88,9 +99,10 @@ fun CommandeCard(
         Column(modifier = Modifier.padding(12.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Commande: ${commande.sohNum}", fontWeight = FontWeight.Bold)
-                    Text("Client: ${commande.clientName}", style = MaterialTheme.typography.bodySmall)
-                    Text("Statut: ${commande.status}", style = MaterialTheme.typography.bodySmall)
+                    // Affichage avec vérification des valeurs nulles
+                    Text("Commande: ${commande.sohNum ?: "Non renseigné"}", fontWeight = FontWeight.Bold)
+                    Text("Client: ${commande.clientName ?: "Non renseigné"}", style = MaterialTheme.typography.bodySmall)
+                    Text("Statut: ${commande.status ?: "Non renseigné"}", style = MaterialTheme.typography.bodySmall)
                 }
                 IconButton(onClick = { expandedState[commande.id] = !expanded }) {
                     Icon(

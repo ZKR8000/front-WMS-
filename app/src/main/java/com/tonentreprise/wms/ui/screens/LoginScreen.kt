@@ -24,12 +24,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import androidx.core.content.edit
 import com.tonentreprise.wms.viewmodel.UserViewModel
 import com.tonentreprise.wms.model.UserRole
-import com.tonentreprise.wms.network.LoginRequest
-import com.tonentreprise.wms.network.RetrofitClient
+import com.tonentreprise.wms.network.AuthRepository
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -48,7 +46,7 @@ fun LoginScreen(navController: NavHostController, userViewModel: UserViewModel) 
 
     val coroutineScope = rememberCoroutineScope()
 
-    // ✅ Redirection automatique si token déjà existant
+    // Redirection automatique si token déjà existant
     LaunchedEffect(Unit) {
         val token = sharedPrefs.getString("jwt_token", null)
         val savedEmail = sharedPrefs.getString("user_email", null)
@@ -91,7 +89,6 @@ fun LoginScreen(navController: NavHostController, userViewModel: UserViewModel) 
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
-                // Email
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
@@ -110,7 +107,6 @@ fun LoginScreen(navController: NavHostController, userViewModel: UserViewModel) 
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Password
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
@@ -140,33 +136,25 @@ fun LoginScreen(navController: NavHostController, userViewModel: UserViewModel) 
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // ✅ Login button
                 Button(
                     onClick = {
                         if (email.text.isNotEmpty() && password.text.isNotEmpty()) {
-                            coroutineScope.launch {
-                                try {
-                                    val apiService = RetrofitClient.getInstance(context)
-                                    val response = apiService.login(
-                                        LoginRequest(email.text, password.text)
-                                    ).execute()
+                            val authRepository = AuthRepository()
+                            authRepository.loginUser(context, email.text, password.text) { success, token ->
+                                if (success && token != null) {
+                                    sharedPrefs.edit {
+                                        putString("jwt_token", token)
+                                        putString("user_email", email.text)
+                                    }
 
-                                    if (response.isSuccessful) {
-                                        val loginResponse = response.body()
-                                        val token = loginResponse?.token ?: ""
+                                    val role = if (email.text.startsWith("admin", ignoreCase = true)) UserRole.ADMIN else UserRole.USER
+                                    userViewModel.setUserRole(role)
 
-                                        sharedPrefs.edit {
-                                            putString("jwt_token", token)
-                                            putString("user_email", email.text) // ✅ Enregistre l'email aussi
-                                        }
+                                    sharedPrefs.edit {
+                                        putString("user_role", if (role == UserRole.ADMIN) "admin" else "user")
+                                    }
 
-                                        val role = if (email.text.startsWith("admin", ignoreCase = true)) UserRole.ADMIN else UserRole.USER
-                                        userViewModel.setUserRole(role)
-
-                                        sharedPrefs.edit {
-                                            putString("user_role", if (role == UserRole.ADMIN) "admin" else "user")
-                                        }
-
+                                    coroutineScope.launch {
                                         welcomeMessage = if (role == UserRole.ADMIN)
                                             "Bonjour ADMINISTRATEUR"
                                         else
@@ -181,12 +169,9 @@ fun LoginScreen(navController: NavHostController, userViewModel: UserViewModel) 
                                         ) {
                                             popUpTo("login") { inclusive = true }
                                         }
-                                    } else {
-                                        welcomeMessage = "Échec de connexion : ${response.code()}"
-                                        showWelcomeMessage = true
                                     }
-                                } catch (e: Exception) {
-                                    welcomeMessage = "Erreur : ${e.localizedMessage}"
+                                } else {
+                                    welcomeMessage = "Échec de connexion"
                                     showWelcomeMessage = true
                                 }
                             }
@@ -203,7 +188,6 @@ fun LoginScreen(navController: NavHostController, userViewModel: UserViewModel) 
                     Text("Se connecter", color = Color.Black)
                 }
 
-                // ✅ Animated message
                 AnimatedVisibility(visible = showWelcomeMessage, enter = fadeIn(), exit = fadeOut()) {
                     Text(
                         text = welcomeMessage,
@@ -216,4 +200,3 @@ fun LoginScreen(navController: NavHostController, userViewModel: UserViewModel) 
         }
     }
 }
-
