@@ -1,7 +1,11 @@
 package com.tonentreprise.wms.network
 
+import com.tonentreprise.wms.model.SalesOrderDetailLightDTO
 import com.tonentreprise.wms.model.SalesOrderLightDTO
 import retrofit2.Call
+import retrofit2.Response
+import retrofit2.http.Path
+
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -28,4 +32,12 @@ interface ApiService {
 
     @GET("/api/sales-orders/light")
     suspend fun getAllSalesOrdersLight(): List<SalesOrderLightDTO>
+
+
+    @GET("api/sales-orders/{id}")
+    suspend fun getSalesOrderDetails(@Path("id") salesOrderId: String): Response<SalesOrderLightDTO>
+
+
+
+
 }

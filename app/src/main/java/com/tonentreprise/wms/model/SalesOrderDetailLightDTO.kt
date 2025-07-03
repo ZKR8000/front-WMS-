@@ -1,12 +1,13 @@
 package com.tonentreprise.wms.model
 
-import java.time.LocalDate
 
 data class SalesOrderDetailLightDTO(
+
     val product: ProductDTO,
-    val productName: String,
+    val productName: String?, // Nullable, car il peut être null dans la base de données
     val quantityToPrepare: Int,
     val lineStatus: String,
-    val dlvdat: String, // Utilise String si tu reçois une date ISO, sinon adapte à `LocalDate`
+    val dlvdat: String, // Reste en String si c'est comme ça dans la base de données, ou tu peux passer à LocalDate
     val uom: String
 )
+
