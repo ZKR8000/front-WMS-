@@ -1,3 +1,5 @@
+import org.gradle.kotlin.dsl.implementation
+
 plugins {
     id("com.android.application")
     kotlin("android")
@@ -79,7 +81,8 @@ dependencies {
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.material3:material3:1.2.0") // Dernière version stable
+    implementation("androidx.compose.material3:material3:1.3.2")
+    // Dernière version stable
     // ✅ Retrofit pour les appels HTTP
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
 

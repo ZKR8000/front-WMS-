@@ -1,6 +1,5 @@
 package com.tonentreprise.wms.model
 
-
 data class ProductDTO(
     val artnum: String,  // Numéro de l'article
     val artdes: String,  // Description de l'article
@@ -13,9 +12,4 @@ data class ProductDTO(
     // Champs ignorés, ils ne seront pas envoyés à partir du backend
 
     val isUniqueToWarehouse: Boolean? = null  // Est unique à l'entrepôt
-)
-
-data class CategoryDTO(
-    val tclcod: String, // Code de la catégorie
-    val tclnam: String  // Nom de la catégorie
 )

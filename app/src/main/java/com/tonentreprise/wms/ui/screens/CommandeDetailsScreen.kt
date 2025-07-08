@@ -10,19 +10,21 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.ExperimentalGetImage
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.Modifier
+import androidx.compose.material3.Card
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.tonentreprise.wms.model.SalesOrderDetailLightDTO
+import com.tonentreprise.wms.model.SalesOrderLightDTO
 import com.tonentreprise.wms.network.RetrofitClient
 import com.tonentreprise.wms.ui.BarcodeScannerActivity
 import kotlinx.coroutines.launch
@@ -34,7 +36,7 @@ fun CommandeDetailsScreen(
     navController: NavHostController,
     commandeId: String
 ) {
-    val produitsCommande = remember { mutableStateOf<List<SalesOrderDetailLightDTO>>(emptyList()) }
+    val produitsCommande = remember { mutableStateOf<List<SalesOrderLightDTO>>(emptyList()) }
     var produitIndex by remember { mutableIntStateOf(0) }
     val produitActuel = produitsCommande.value.getOrNull(produitIndex)
 
@@ -47,29 +49,28 @@ fun CommandeDetailsScreen(
     var lastScannedCab by remember { mutableStateOf("") }
     var quantiteValidee by remember { mutableIntStateOf(0) }
 
-    // Récupérer les produits de la commande via l'API
     val apiService = RetrofitClient.getInstance(context)
 
     LaunchedEffect(commandeId) {
         try {
-            // Appel API
-            val result = apiService.getSalesOrderDetails(commandeId)
+            val result = apiService.getAllSalesOrdersLight()
 
-            // Vérifier que la réponse n'est pas nulle et récupérer salesOrderDetails
-            produitsCommande.value = result.body()?.salesOrderDetails ?: emptyList()  // Assurez-vous de gérer la réponse correctement
+            if (result.isNotEmpty()) {
+                produitsCommande.value = result
+            } else {
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar("Aucune commande disponible.")
+                }
+            }
         } catch (e: Exception) {
             coroutineScope.launch {
-                snackbarHostState.showSnackbar("Erreur lors du chargement des détails de la commande.")
+                snackbarHostState.showSnackbar("Erreur lors du chargement des commandes.")
             }
         }
     }
 
+    val quantiteDemandee = produitActuel?.salesOrderDetails?.firstOrNull()?.quantityToPrepare ?: 0
 
-
-
-    val quantiteDemandee = produitActuel?.quantityToPrepare ?: 0
-
-    // Fonction de vibration
     fun vibrate(ctx: Context) {
         val vib = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
             val vm = ctx.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager
@@ -81,7 +82,6 @@ fun CommandeDetailsScreen(
         vib.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE))
     }
 
-    // Lancement du scanner de codes-barres
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val scanned = result.data?.getStringExtra("barcode_result") ?: ""
@@ -92,15 +92,12 @@ fun CommandeDetailsScreen(
             } else if (emplCode.isEmpty()) {
                 if (scanned == lastScannedCab) {
                     coroutineScope.launch {
-                        snackbarHostState.showSnackbar(
-                            "❌ Erreur : CAB et EMPL ne peuvent pas être identiques !"
-                        )
+                        snackbarHostState.showSnackbar("❌ Erreur : CAB et EMPL ne peuvent pas être identiques !")
                     }
                 } else {
                     emplCode = scanned
                     vibrate(context)
 
-                    // Mise à jour de la quantité validée
                     quantiteValidee++
                     if (quantiteValidee >= quantiteDemandee) {
                         coroutineScope.launch {
@@ -117,18 +114,16 @@ fun CommandeDetailsScreen(
         }
     }
 
-    // UI de l'écran
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack, // Corrected icon
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Retour",
                             tint = MaterialTheme.colorScheme.onPrimary
                         )
-
                     }
                 },
                 title = {
@@ -145,44 +140,65 @@ fun CommandeDetailsScreen(
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { padding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(16.dp)
         ) {
-            Text(
-                "Produit à scanner :",
-                style = MaterialTheme.typography.headlineSmall
-            )
+            item {
+                Text(
+                    "Produit à scanner :",
+                    style = MaterialTheme.typography.headlineSmall,
+                    modifier = Modifier.padding(bottom = 16.dp),
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
 
-            produitActuel?.let {
-                // Affichage des détails du produit
-                CommandeDetailRow("Support", it.product.artnum)
-                CommandeDetailRow("LPN", it.product.sku)
-                CommandeDetailRow("SKU", it.productName ?: "N/A") // Ajout d'une valeur par défaut
-                CommandeDetailRow("Quantité demandée", it.quantityToPrepare.toString())
-                CommandeDetailRow("Quantité validée", quantiteValidee.toString())
+            produitsCommande.value.forEach { commande ->
+                item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp)
+                            .shadow(8.dp, shape = MaterialTheme.shapes.medium),
+                        shape = MaterialTheme.shapes.medium
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            CommandeDetailRow("Numéro de commande", commande.sohNum ?: "Non spécifié")
+                            CommandeDetailRow("Client", commande.clientName ?: "Inconnu")
+                            CommandeDetailRow("Statut", commande.status ?: "Inconnu")
 
-                Spacer(Modifier.height(20.dp))
+                            Spacer(Modifier.height(16.dp))
 
-                // Champ de saisie du code CAB
-                BarcodeInputField(label = "CAB", value = cabCode) {
-                    launcher.launch(Intent(context, BarcodeScannerActivity::class.java))
+                            commande.salesOrderDetails.forEach { detail ->
+                                CommandeDetailRow("Produit", detail.product.artdes ?: "Inconnu")
+                                CommandeDetailRow("Quantité demandée", detail.quantityToPrepare.toString())
+                                CommandeDetailRow("Statut de ligne", detail.lineStatus ?: "Inconnu")
+                                CommandeDetailRow("Date de livraison", detail.dlvdat)
+                                CommandeDetailRow("Unité de mesure", detail.uom)
+                            }
+                        }
+                    }
                 }
-                Spacer(Modifier.height(12.dp))
 
-                // Champ de saisie du code EMPL
-                BarcodeInputField(label = "EMPL", value = emplCode) {
-                    launcher.launch(Intent(context, BarcodeScannerActivity::class.java))
+                item {
+                    Spacer(Modifier.height(20.dp))
+
+                    BarcodeInputField(label = "CAB", value = cabCode) {
+                        launcher.launch(Intent(context, BarcodeScannerActivity::class.java))
+                    }
+                    Spacer(Modifier.height(12.dp))
+
+                    BarcodeInputField(label = "EMPL", value = emplCode) {
+                        launcher.launch(Intent(context, BarcodeScannerActivity::class.java))
+                    }
                 }
             }
         }
     }
 }
 
-// Composant pour afficher une ligne de détail
 @Composable
 fun CommandeDetailRow(label: String, value: String) {
     Row(
@@ -191,12 +207,11 @@ fun CommandeDetailRow(label: String, value: String) {
             .padding(vertical = 6.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(label, style = MaterialTheme.typography.bodyLarge)
-        Text(value, style = MaterialTheme.typography.bodyMedium)
+        Text(label, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onBackground)
+        Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
     }
 }
 
-// Composant pour afficher un champ de saisie pour scanner
 @Composable
 fun BarcodeInputField(
     label: String,
