@@ -11,17 +11,18 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.ExperimentalGetImage
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.*
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.material3.Card
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.tonentreprise.wms.model.SalesOrderLightDTO
@@ -30,7 +31,7 @@ import com.tonentreprise.wms.ui.BarcodeScannerActivity
 import kotlinx.coroutines.launch
 
 @androidx.annotation.OptIn(ExperimentalGetImage::class)
-@OptIn(ExperimentalGetImage::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalGetImage::class)
 @Composable
 fun CommandeDetailsScreen(
     navController: NavHostController,
@@ -54,14 +55,7 @@ fun CommandeDetailsScreen(
     LaunchedEffect(commandeId) {
         try {
             val result = apiService.getAllSalesOrdersLight()
-
-            if (result.isNotEmpty()) {
-                produitsCommande.value = result
-            } else {
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar("Aucune commande disponible.")
-                }
-            }
+            produitsCommande.value = result.filter { it.sohNum == commandeId }
         } catch (e: Exception) {
             coroutineScope.launch {
                 snackbarHostState.showSnackbar("Erreur lors du chargement des commandes.")
@@ -92,7 +86,7 @@ fun CommandeDetailsScreen(
             } else if (emplCode.isEmpty()) {
                 if (scanned == lastScannedCab) {
                     coroutineScope.launch {
-                        snackbarHostState.showSnackbar("❌ Erreur : CAB et EMPL ne peuvent pas être identiques !")
+                        snackbarHostState.showSnackbar("❌ CAB et EMPL ne peuvent pas être identiques !")
                     }
                 } else {
                     emplCode = scanned
@@ -155,44 +149,40 @@ fun CommandeDetailsScreen(
                 )
             }
 
-            produitsCommande.value.forEach { commande ->
-                item {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp)
-                            .shadow(8.dp, shape = MaterialTheme.shapes.medium),
-                        shape = MaterialTheme.shapes.medium
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            CommandeDetailRow("Numéro de commande", commande.sohNum ?: "Non spécifié")
-                            CommandeDetailRow("Client", commande.clientName ?: "Inconnu")
-                            CommandeDetailRow("Statut", commande.status ?: "Inconnu")
+            items(produitsCommande.value) { commande ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp)
+                        .shadow(8.dp, shape = MaterialTheme.shapes.medium),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        CommandeDetailRow("Numéro de commande", commande.sohNum ?: "Non spécifié")
+                        CommandeDetailRow("Client", commande.clientName ?: "Inconnu")
+                        CommandeDetailRow("Statut", commande.status ?: "Inconnu")
 
-                            Spacer(Modifier.height(16.dp))
+                        Spacer(Modifier.height(16.dp))
 
-                            commande.salesOrderDetails.forEach { detail ->
-                                CommandeDetailRow("Produit", detail.product.artdes ?: "Inconnu")
-                                CommandeDetailRow("Quantité demandée", detail.quantityToPrepare.toString())
-                                CommandeDetailRow("Statut de ligne", detail.lineStatus ?: "Inconnu")
-                                CommandeDetailRow("Date de livraison", detail.dlvdat)
-                                CommandeDetailRow("Unité de mesure", detail.uom)
-                            }
+                        commande.salesOrderDetails.forEach { detail ->
+                            CommandeDetailRow("Produit", detail.product.artdes ?: "Inconnu")
+                            CommandeDetailRow("Quantité demandée", detail.quantityToPrepare.toString())
+                            CommandeDetailRow("Statut de ligne", detail.lineStatus ?: "Inconnu")
+                            CommandeDetailRow("Date de livraison", detail.dlvdat)
+                            CommandeDetailRow("Unité de mesure", detail.uom)
                         }
                     }
                 }
 
-                item {
-                    Spacer(Modifier.height(20.dp))
+                Spacer(Modifier.height(20.dp))
 
-                    BarcodeInputField(label = "CAB", value = cabCode) {
-                        launcher.launch(Intent(context, BarcodeScannerActivity::class.java))
-                    }
-                    Spacer(Modifier.height(12.dp))
+                BarcodeInputField(label = "CAB", value = cabCode) {
+                    launcher.launch(Intent(context, BarcodeScannerActivity::class.java))
+                }
+                Spacer(Modifier.height(12.dp))
 
-                    BarcodeInputField(label = "EMPL", value = emplCode) {
-                        launcher.launch(Intent(context, BarcodeScannerActivity::class.java))
-                    }
+                BarcodeInputField(label = "EMPL", value = emplCode) {
+                    launcher.launch(Intent(context, BarcodeScannerActivity::class.java))
                 }
             }
         }
@@ -241,6 +231,6 @@ fun BarcodeInputField(
 fun CommandeDetailsScreenPreview() {
     CommandeDetailsScreen(
         navController = rememberNavController(),
-        commandeId = "1001"
+        commandeId = "PREP-001"
     )
 }
