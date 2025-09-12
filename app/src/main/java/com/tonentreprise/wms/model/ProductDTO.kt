@@ -8,6 +8,8 @@ data class ProductDTO(
     val category: CategoryDTO, // Catégorie du produit
     val categoryName: String? = null,  // Nom de la catégorie (TCLNAM)
     val categoryCode: String? = null,  // Code de la catégorie (TCLCOD)
+    val stockQty: Int? = null,
+
 
     // Champs ignorés, ils ne seront pas envoyés à partir du backend
 

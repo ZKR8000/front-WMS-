@@ -10,4 +10,3 @@ data class SalesOrderDetailLightDTO(
     val dlvdat: String, // Reste en String si c'est comme ça dans la base de données, ou tu peux passer à LocalDate
     val uom: String
 )
-

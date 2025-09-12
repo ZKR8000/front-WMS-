@@ -72,13 +72,13 @@ fun DashboardScreen(navController: NavHostController, userViewModel: UserViewMod
             )
 
             DashboardMenuCard(
-                label = "Préparation",
+                label = "Expédition",
                 icon = Icons.Filled.Warehouse,
                 color = Color(0xFF03DAC5), // Teal clair
                 onClick = { navController.navigate("preparation") }
             )
             DashboardMenuCard(
-                label = "Transfert",
+                label = "Changement de stock",
                 icon = Icons.AutoMirrored.Filled.CompareArrows,
                 color = Color(0xFF018786), // Teal foncé
                 onClick = { navController.navigate("transfert") }
@@ -88,6 +88,12 @@ fun DashboardScreen(navController: NavHostController, userViewModel: UserViewMod
                 icon = Icons.Filled.Receipt,
                 color = Color(0xFFCF6679), // Rouge clair
                 onClick = { navController.navigate("reception") }
+            )
+            DashboardMenuCard(
+                label = "Déclaration de production",
+                icon = Icons.AutoMirrored.Filled.CompareArrows,
+                color = Color(0xFF018786), // Teal foncé
+                onClick = { navController.navigate("") }
             )
             DashboardMenuCard(
                 label = "Déconnexion",

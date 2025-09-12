@@ -76,7 +76,7 @@ fun PreparationScreen(navController: NavHostController) {
             }
 
             Spacer(modifier = Modifier.height(20.dp))
-            SectionTitle("Commandes validées", Color(0xFF388E3C))
+            SectionTitle("Commandes préparées", Color(0xFF388E3C))
             LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 items(commandes.filter { it.status == "VALIDEE" }) { commande ->
                     CommandeCard(navController, commande, expandedState, Color(0xFF388E3C))
@@ -105,9 +105,17 @@ fun CommandeCard(
     color: Color
 ) {
     val expanded = expandedState[commande.sohNum] == true // Vérification booléenne
-    val client = commande.clientName // Utilisation de données dynamiques du client
-    val statut = commande.status // Utilisation de données dynamiques du statut
-    val produits = commande.salesOrderDetails.map { it.productName } // Récupération des produits dynamiquement
+    val client = commande.clientName
+    val statut = commande.status
+
+    // Sécurité : éviter NPE si la liste est null
+    val details = commande.salesOrderDetails.orEmpty()
+
+    // Total produits associés à la commande :
+    // - on compte les lignes avec un productName non vide;
+    // - si tout est vide/null (ton cas actuel), on retombe sur la taille de la liste.
+    val totalProduits = details.count { !it.productName.isNullOrBlank() }
+        .let { if (it > 0) it else details.size }
 
     Card(
         modifier = Modifier
@@ -130,33 +138,37 @@ fun CommandeCard(
                 IconButton(onClick = { expandedState[commande.sohNum] = !expanded }) {
                     Icon(
                         imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = "Afficher/Masquer les produits"
+                        contentDescription = "Afficher/Masquer le résumé"
                     )
                 }
             }
 
+            // À l'ouverture : afficher uniquement le résumé demandé
             if (expanded) {
-                produits.forEach { produit ->
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                            .clickable {
-                                navController.navigate("commande_details/${commande.sohNum}") // Lien vers les détails
-                            },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = produit ?: "Valeur par défaut", // Si 'produit' est null, il affichera "Valeur par défaut"
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.Black,
-                            modifier = Modifier.weight(1f)
-                        )
+                Spacer(Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Total produits associés : $totalProduits",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Black,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
 
-                    }
+                // (Optionnel) bouton pour accéder à l'écran détaillé si tu veux
+
+                TextButton(
+                    onClick = { navController.navigate("commande_details/${commande.sohNum}") },
+                    modifier = Modifier.padding(start = 16.dp)
+                ) {
+                    Text("Voir le détail")
                 }
             }
         }
     }
 }
-
